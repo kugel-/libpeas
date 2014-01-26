@@ -5,6 +5,7 @@ INCLUDES = \
 	-I$(srcdir)			\
 	$(PEAS_CFLAGS)			\
 	$(PEAS_GTK_CFLAGS)		\
+	$(GTK_MAC_CFLAGS)		\
 	$(GCOV_CFLAGS)			\
 	$(WARN_CFLAGS)			\
 	$(DISABLE_DEPRECATED)
@@ -17,6 +18,7 @@ libpeas_gtk_1_0_la_LDFLAGS = \
 libpeas_gtk_1_0_la_LIBADD = \
 	$(PEAS_LIBS)							\
 	$(PEAS_GTK_LIBS)						\
+	$(GTK_MAC_LIBS)							\
 	$(top_builddir)/libpeas/libpeas-1.0.la
 
 INST_H_FILES = \
@@ -35,6 +37,12 @@ C_FILES = \
 	peas-gtk-plugin-manager.c		\
 	peas-gtk-plugin-manager-store.c		\
 	peas-gtk-plugin-manager-view.c
+
+if OS_OSX
+C_FILES += peas-gtk-osx.m
+
+libpeas_gtk_1_0_la_LDFLAGS += -framework Cocoa
+endif
 
 libpeas_gtk_1_0_la_SOURCES = \
 	$(INST_H_FILES)			\

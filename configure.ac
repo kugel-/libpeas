@@ -143,6 +143,8 @@ if test "$os_osx" = "yes"; then
 	AC_DEFINE([OS_OSX],[1],[Defined if os is Mac OSX])
 
 	PKG_CHECK_MODULES(GTK_MAC, gtk-mac-integration)
+
+	AC_PROG_OBJC
 fi
 
 dnl ================================================================

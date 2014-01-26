@@ -29,10 +29,6 @@
 #include <string.h>
 #include <girepository.h>
 
-#ifdef OS_OSX
-#include <Carbon/Carbon.h>
-#endif
-
 #include <libpeas/peas-engine.h>
 #include <libpeas/peas-plugin-info.h>
 #include <libpeas/peas-i18n.h>
@@ -40,6 +36,10 @@
 #include "peas-gtk-plugin-manager.h"
 #include "peas-gtk-plugin-manager-view.h"
 #include "peas-gtk-configurable.h"
+
+#ifdef OS_OSX
+#include "peas-gtk-osx.h"
+#endif
 
 /**
  * SECTION:peas-gtk-plugin-manager
@@ -161,7 +161,7 @@ help_button_cb (GtkWidget      *button,
   help_uri = peas_plugin_info_get_help_uri (info);
 
 #ifdef OS_OSX
-  [[NSWorkspace sharedWorkspace] openURL:[NSURL URLWithString:[NSString stringWithUTF8String:help_uri]]];
+  peas_gtk_osx_show_uri (help_uri);
 #else
 
   gtk_show_uri (NULL,
