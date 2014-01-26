@@ -24,7 +24,7 @@
 #endif
 
 #ifdef OS_OSX
-#include <ige-mac-bundle.h>
+#include <gtkosxapplication.h>
 #endif
 
 #include "peas-dirs.h"
@@ -42,13 +42,11 @@ peas_dirs_get_data_dir (void)
   data_dir = g_build_filename (win32_dir, "share", "libpeas-1.0", NULL);
   g_free (win32_dir);
 #elif defined (OS_OSX)
-  IgeMacBundle *bundle = ige_mac_bundle_get_default ();
-
-  if (ige_mac_bundle_get_is_app_bundle (bundle))
+  if (gtkosx_application_get_bundle_id () != NULL)
     {
-      const gchar *bundle_data_dir = ige_mac_bundle_get_datadir (bundle);
+      const gchar *bundle_resource_dir = gtkosx_application_get_resource_path ();
 
-      data_dir = g_build_filename (bundle_data_dir, "libpeas-1.0", NULL);
+      data_dir = g_build_filename (bundle_resource_dir, "share", "libpeas-1.0", NULL);
     }
   else
     {
@@ -74,11 +72,9 @@ peas_dirs_get_lib_dir (void)
   lib_dir = g_build_filename (win32_dir, "lib", "libpeas-1.0", NULL);
   g_free (win32_dir);
 #elif defined (OS_OSX)
-  IgeMacBundle *bundle = ige_mac_bundle_get_default ();
-
-  if (ige_mac_bundle_get_is_app_bundle (bundle))
+  if (gtkosx_application_get_bundle_id () != NULL)
     {
-      const gchar *path = ige_mac_bundle_get_resourcesdir (bundle);
+      const gchar *path = gtkosx_application_get_resource_path ();
 
       lib_dir = g_build_filename (path, "lib", "libpeas-1.0", NULL);
     }
@@ -126,11 +122,11 @@ peas_dirs_get_locale_dir (void)
 
   g_free (win32_dir);
 #elif defined (OS_OSX)
-  IgeMacBundle *bundle = ige_mac_bundle_get_default ();
-
-  if (ige_mac_bundle_get_is_app_bundle (bundle))
+  if (gtkosx_application_get_bundle_id () != NULL)
     {
-      locale_dir = g_strdup (ige_mac_bundle_get_localedir (bundle));
+      const gchar *path = gtkosx_application_get_resource_path ();
+
+      locale_dir = g_build_filename (path, "share", "locale", NULL);
     }
   else
     {
