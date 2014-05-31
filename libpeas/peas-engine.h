@@ -123,7 +123,11 @@ PeasExtension    *peas_engine_create_extension    (PeasEngine      *engine,
                                                    GType            extension_type,
                                                    const gchar     *first_property,
                                                    ...);
-
+gboolean          peas_engine_install_provider    (PeasEngine             *engine,
+                                                   const gchar            *extension,
+                                                   PeasPluginInfoProvider  provider_func,
+                                                   gpointer                user_data,
+                                                   GDestroyNotify          destroy_notify);
 
 G_END_DECLS
 

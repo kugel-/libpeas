@@ -96,8 +96,16 @@ struct _PeasEnginePrivate {
 
   GList *plugin_list;
 
+  GHashTable *providers;
+
   guint in_dispose : 1;
 };
+
+typedef struct _ProviderInfo {
+  PeasPluginInfoProvider func;
+  gpointer               data;
+  GDestroyNotify         destroy;
+} ProviderInfo;
 
 static void peas_engine_load_plugin_real   (PeasEngine     *engine,
                                             PeasPluginInfo *info);
@@ -108,14 +116,17 @@ static void
 load_plugin_info (PeasEngine  *engine,
                   const gchar *filename,
                   const gchar *module_dir,
-                  const gchar *data_dir)
+                  const gchar *data_dir,
+                  ProviderInfo *pinfo)
 {
   PeasPluginInfo *info;
   const gchar *module_name;
 
   info = _peas_plugin_info_new (filename,
                                 module_dir,
-                                data_dir);
+                                data_dir,
+                                pinfo->func,
+                                pinfo->data);
 
   if (info == NULL)
     {
@@ -168,9 +179,17 @@ load_dir_real (PeasEngine  *engine,
           if (recursions > 0)
             load_dir_real (engine, filename, data_dir, recursions - 1);
         }
-      else if (g_str_has_suffix (dirent, ".plugin"))
+      else
         {
-          load_plugin_info (engine, filename, module_dir, data_dir);
+          const gchar *dot = g_utf8_strrchr(filename, -1, '.');
+          if (dot)
+            {
+              ProviderInfo *p;
+
+              p = g_hash_table_lookup(engine->priv->providers, g_utf8_next_char(dot));
+              if (p)
+                load_plugin_info (engine, filename, module_dir, data_dir, p);
+            }
         }
 
       g_free (filename);
@@ -329,6 +348,15 @@ loader_destroy (LoaderInfo *info)
 }
 
 static void
+provider_info_destroy (ProviderInfo *pinfo)
+{
+  if (pinfo->destroy != NULL && pinfo->data != NULL)
+    pinfo->destroy (pinfo->data);
+
+  g_free (pinfo);
+}
+
+static void
 peas_engine_init (PeasEngine *engine)
 {
   /* Set the default engine here and not in constructor() to make sure
@@ -347,6 +375,15 @@ peas_engine_init (PeasEngine *engine)
                                               PeasEnginePrivate);
 
   engine->priv->in_dispose = FALSE;
+
+  engine->priv->providers = g_hash_table_new_full(g_direct_hash, g_str_equal,
+                                                  (GDestroyNotify) g_free,
+                                                  (GDestroyNotify) provider_info_destroy);
+
+  ProviderInfo *def_info = g_new0(ProviderInfo, 1);
+  def_info->func = _peas_plugin_info_keyfile;
+
+  g_hash_table_insert(engine->priv->providers, g_strdup("plugin"), def_info );
 }
 
 static void
@@ -484,6 +521,7 @@ peas_engine_finalize (GObject *object)
     }
 
   g_list_free (engine->priv->search_paths);
+  g_hash_table_destroy (engine->priv->providers);
 
   G_OBJECT_CLASS (peas_engine_parent_class)->finalize (object);
 }
@@ -1274,6 +1312,46 @@ peas_engine_set_loaded_plugins (PeasEngine   *engine,
       else if (is_loaded && !to_load)
         g_signal_emit (engine, signals[UNLOAD_PLUGIN], 0, info);
     }
+}
+
+/**
+ * peas_engine_install_provider:
+ * @engine: A #PeasEngine.
+ * @extension: The file extension for the custom plugin description format
+ * @provider_func: (allow-none): The callback function
+ * @user_data: (allow-none): Extra data that is passed to the callback function
+ * @destroy_notify: (allow-none): Notification when the engine releases the provider
+ *
+ * Installs a custom callback to provide a plugin description for a custom description
+ * format. Libpeas natively understands and parses the #GKeyFile based .plugin format.
+ * By calling this function you can add additional formats. The intended use case
+ * is to enable libpeas to load legacy plugins for your application in order to
+ * maintain backwards compatibility.
+ *
+ * The callback should fill in the necessary fields of the provided #PeasPluginInfo
+ * instance.
+ *
+ * Since: 1.10
+ */
+gboolean
+peas_engine_install_provider(PeasEngine             *engine,
+                             const gchar            *extension,
+                             PeasPluginInfoProvider  provider_func,
+                             gpointer                user_data,
+                             GDestroyNotify          destroy_notify)
+{
+  g_return_val_if_fail (PEAS_IS_ENGINE (engine), FALSE);
+  g_return_val_if_fail (extension != NULL, FALSE);
+  g_return_val_if_fail (provider_func != NULL, FALSE);
+
+  ProviderInfo *p = g_new(ProviderInfo, 1);
+  p->func         = provider_func;
+  p->data         = user_data;
+  p->destroy      = destroy_notify;
+
+  g_hash_table_insert(engine->priv->providers, g_strdup(extension), p);
+
+  return TRUE;
 }
 
 /**

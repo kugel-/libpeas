@@ -123,12 +123,12 @@ peas_plugin_info_error_quark (void)
  *
  * Return value: a newly created #PeasPluginInfo.
  */
-PeasPluginInfo *
-_peas_plugin_info_new (const gchar *filename,
-                       const gchar *module_dir,
-                       const gchar *data_dir)
+gboolean _peas_plugin_info_keyfile (PeasPluginInfo *info,
+                                    const gchar    *filename,
+                                    const gchar    *module_dir,
+                                    const gchar    *data_dir,
+                                    gpointer        user_data)
 {
-  PeasPluginInfo *info;
   GKeyFile *plugin_file = NULL;
   gchar *str;
   gchar **strv;
@@ -136,11 +136,6 @@ _peas_plugin_info_new (const gchar *filename,
   GError *error = NULL;
   gchar **keys;
   gsize i;
-
-  g_return_val_if_fail (filename != NULL, NULL);
-
-  info = g_new0 (PeasPluginInfo, 1);
-  info->refcount = 1;
 
   plugin_file = g_key_file_new ();
   if (!g_key_file_load_from_file (plugin_file, filename, G_KEY_FILE_NONE, NULL))
@@ -278,22 +273,57 @@ _peas_plugin_info_new (const gchar *filename,
 
   g_key_file_free (plugin_file);
 
-  info->module_dir = g_strdup (module_dir);
-  info->data_dir = g_build_filename (data_dir, info->module_name, NULL);
+  return TRUE;
+  
+error:
+  g_free (info->module_name);
+  g_free (info->name);
+  g_key_file_free (plugin_file);
+
+  return FALSE;
+}
+
+/*
+ * _peas_plugin_info_new:
+ * @filename: The filename where to read the plugin information.
+ * @module_dir: The module directory.
+ * @data_dir: The data directory.
+ *
+ * Creates a new #PeasPluginInfo from a file on the disk.
+ *
+ * Return value: a newly created #PeasPluginInfo.
+ */
+PeasPluginInfo *
+_peas_plugin_info_new (const gchar *filename,
+                       const gchar *module_dir,
+                       const gchar *data_dir,
+                       PeasPluginInfoProvider provider,
+                       gpointer provider_data)
+{
+  PeasPluginInfo *info;
+
+  info = g_new0 (PeasPluginInfo, 1);
+  info->refcount = 1;
+
+  g_return_val_if_fail (filename != NULL, NULL);
+
+  if (!provider(info, filename, module_dir, data_dir, provider_data))
+    {
+      g_free(info);
+      return NULL;
+    }
+
+  /* allow provder to override module and data dirs */
+  if (!info->module_dir)
+    info->module_dir = g_strdup (module_dir);
+  if (!info->data_dir)
+    info->data_dir = g_build_filename (data_dir, info->module_name, NULL);
 
   /* If we know nothing about the availability of the plugin,
      set it as available */
   info->available = TRUE;
 
   return info;
-
-error:
-  g_free (info->module_name);
-  g_free (info->name);
-  g_free (info);
-  g_key_file_free (plugin_file);
-
-  return NULL;
 }
 
 /**

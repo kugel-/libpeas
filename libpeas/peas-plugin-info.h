@@ -98,6 +98,13 @@ const gchar  *peas_plugin_info_get_help_uri     (const PeasPluginInfo *info);
 const gchar  *peas_plugin_info_get_external_data (const PeasPluginInfo *info,
                                                   const gchar          *key);
 
+
+typedef gboolean (*PeasPluginInfoProvider)        (PeasPluginInfo *info,
+                                                   const gchar    *filename,
+                                                   const gchar    *module_dir,
+                                                   const gchar    *data_dir,
+                                                   gpointer        user_data);
+
 G_END_DECLS
 
 #endif /* __PEAS_PLUGIN_INFO_H__ */

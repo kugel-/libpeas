@@ -61,11 +61,18 @@ struct _PeasPluginInfo {
   guint hidden : 1;
 };
 
-PeasPluginInfo *_peas_plugin_info_new   (const gchar    *filename,
-                                         const gchar    *module_dir,
-                                         const gchar    *data_dir);
-PeasPluginInfo *_peas_plugin_info_ref   (PeasPluginInfo *info);
-void            _peas_plugin_info_unref (PeasPluginInfo *info);
+PeasPluginInfo *_peas_plugin_info_new     (const gchar    *filename,
+                                           const gchar *module_dir,
+                                           const gchar *data_dir,
+                                           PeasPluginInfoProvider provider,
+                                           gpointer provider_data);
+gboolean        _peas_plugin_info_keyfile (PeasPluginInfo *info,
+                                           const gchar    *filename,
+                                           const gchar    *module_dir,
+                                           const gchar    *data_dir,
+                                           gpointer        user_data);
+PeasPluginInfo *_peas_plugin_info_ref     (PeasPluginInfo *info);
+void            _peas_plugin_info_unref   (PeasPluginInfo *info);
 
 
 #endif /* __PEAS_PLUGIN_INFO_PRIV_H__ */
