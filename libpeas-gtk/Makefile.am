@@ -44,6 +44,27 @@ libpeas_gtk_1_0_la_SOURCES = \
 headerdir = $(prefix)/include/libpeas-1.0/libpeas-gtk
 header_DATA = $(INST_H_FILES)
 
+EXTRA_DIST =
+CLEANFILES =
+
+if ENABLE_VAPIGEN
+  -include $(VAPIGEN_MAKEFILE)
+  libpeas-gtk-1.0.vapi: PeasGtk-1.0.gir libpeas-gtk-1.0.deps
+
+  VAPIGEN_VAPIS = libpeas-gtk-1.0.vapi
+
+  libpeas_gtk_1_0_vapi_DEPS = gtk+-3.0 libpeas-1.0
+  libpeas_gtk_1_0_vapi_GIRDIRS = $(srcdir)
+  libpeas_gtk_1_0_vapi_METADATADIRS = $(srcdir)
+  libpeas_gtk_1_0_vapi_FILES = PeasGtk-1.0.gir
+
+  vapidir = $(datadir)/vala/vapi
+  vapi_DATA = $(VAPIGEN_VAPIS) $(VAPIGEN_VAPIS:.vapi=.deps)
+
+  EXTRA_DIST += PeasGtk-1.0.metadata libpeas-gtk-1.0.deps
+  CLEANFILES += $(VAPIGEN_VAPIS)
+endif
+
 if HAVE_INTROSPECTION
   -include $(INTROSPECTION_MAKEFILE)
   INTROSPECTION_GIRS = PeasGtk-1.0.gir
@@ -71,7 +92,7 @@ if HAVE_INTROSPECTION
   typelibdir = $(libdir)/girepository-1.0
   typelib_DATA = $(INTROSPECTION_GIRS:.gir=.typelib)
 
-  CLEANFILES = $(gir_DATA) $(typelib_DATA)
+  CLEANFILES += $(gir_DATA) $(typelib_DATA)
 endif
 
 gcov_sources = $(C_FILES)

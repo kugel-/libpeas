@@ -82,6 +82,24 @@ EXTRA_DIST = peas-marshal.list
 
 CLEANFILES = $(BUILT_SOURCES)
 
+if ENABLE_VAPIGEN
+  -include $(VAPIGEN_MAKEFILE)
+  libpeas-1.0.vapi: Peas-1.0.gir Peas-1.0.metadata libpeas-1.0.deps
+
+  VAPIGEN_VAPIS = libpeas-1.0.vapi
+
+  libpeas_1_0_vapi_DEPS = gio-2.0 gobject-introspection-1.0
+  libpeas_1_0_vapi_GIRDIRS = $(srcdir)
+  libpeas_1_0_vapi_METADATADIRS = $(srcdir)
+  libpeas_1_0_vapi_FILES = Peas-1.0.gir
+
+  vapidir = $(datadir)/vala/vapi
+  vapi_DATA = $(VAPIGEN_VAPIS) $(VAPIGEN_VAPIS:.vapi=.deps)
+
+  EXTRA_DIST += Peas-1.0.metadata libpeas-1.0.deps
+  CLEANFILES += $(VAPIGEN_VAPIS)
+endif
+
 dist-hook:
 	cd $(distdir); rm -f $(BUILT_SOURCES)
 
