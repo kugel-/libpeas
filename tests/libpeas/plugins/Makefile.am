@@ -14,6 +14,10 @@ SUBDIRS += extension-python
 endif
 endif
 
+if ENABLE_RBFFI
+SUBDIRS += extension-rbffi
+endif
+
 noinst_PLUGIN = \
 	extension-c-nonexistent.plugin		\
 	extension-lua51-nonexistent.plugin	\

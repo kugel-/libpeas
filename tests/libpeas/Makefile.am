@@ -47,3 +47,10 @@ extension_python3_SOURCES  = extension-py.c
 extension_python3_CFLAGS   = $(PYGOBJECT_CFLAGS) $(PYTHON3_CFLAGS)
 extension_python3_LDADD    = $(LDADD) $(PYGOBJECT_LIBS) $(PYTHON3_LIBS)
 endif
+
+if ENABLE_RBFFI
+TEST_PROGS                += extension-rbffi
+extension_rbffi_SOURCES    = extension-rbffi.c
+extension_rbffi_CFLAGS     = $(RUBY_CFLAGS) -Wno-strict-prototypes
+extension_rbffi_LDADD      = $(LDADD) $(RUBY_LIBS)
+endif

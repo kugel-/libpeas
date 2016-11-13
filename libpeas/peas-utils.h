@@ -25,7 +25,7 @@
 #include <glib-object.h>
 
 #define PEAS_UTILS_C_LOADER_ID  0
-#define PEAS_UTILS_N_LOADERS    4
+#define PEAS_UTILS_N_LOADERS    5
 
 gboolean  peas_utils_valist_to_parameter_list (GType         iface_type,
                                                const gchar  *first_property,

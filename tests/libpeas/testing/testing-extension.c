@@ -223,11 +223,14 @@ test_extension_plugin_info (PeasEngine     *engine,
 
   g_assert (peas_engine_load_plugin (engine, info));
 
+  printf(" *** \n");
   extension = peas_engine_create_extension (engine, info,
                                             INTROSPECTION_TYPE_BASE,
                                             NULL);
 
   base = INTROSPECTION_BASE (extension);
+
+  printf(" *** \n");
 
   g_assert (introspection_base_get_plugin_info (base) == info);
 

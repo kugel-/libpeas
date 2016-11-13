@@ -1,0 +1,7 @@
+[Plugin]
+Module=extension-rbffi
+Loader=rbffi
+Name=Extension ruby-ffi
+Description=This plugin is for the rbffu PeasExtension tests.
+Authors=Thomas Martitz
+Copyright=Copyright © 2016 Thomas Martitz

@@ -1,0 +1,6 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<gresources>
+  <gresource prefix="/org/gnome/libpeas/loaders/rbffi">
+    <file alias="internal.rb">peas-rbffi-internal.rb</file>
+  </gresource>
+</gresources>

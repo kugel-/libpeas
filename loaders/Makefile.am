@@ -12,6 +12,10 @@ if ENABLE_PYTHON3
 SUBDIRS += python3
 endif
 
+if ENABLE_RBFFI
+SUBDIRS += rbffi
+endif
+
 gcov:
 	@for dir in $(SUBDIRS); do \
 	   (cd $$dir && $(MAKE) $(AM_MAKEFLAGS) $(@)); \

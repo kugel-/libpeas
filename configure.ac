@@ -359,6 +359,38 @@ fi
 AM_CONDITIONAL([ENABLE_LUA51], [test "x$found_lua51" = "xyes"])
 
 dnl ================================================================
+dnl Ruby
+dnl ================================================================
+
+AC_ARG_ENABLE(ruby,
+    AS_HELP_STRING([--enable-ruby],[Enable Ruby support]),
+    [enable_ruby=$enableval],
+    [enable_ruby=auto])
+
+if test "$enable_ruby" != "no"; then
+    PKG_CHECK_EXISTS([ruby],
+        [found_ruby=ruby],
+        PKG_CHECK_EXISTS([ruby-2.3],
+            [found_ruby=ruby-2.3],
+            [found_ruby=no]))
+fi
+
+if test "$enable_ruby" = "yes" -a "$found_ruby" = "no"; then
+    AC_MSG_ERROR([You need to have Ruby installed to build libpeas])
+fi
+
+RUBY_BIN="$found_ruby"
+RUBY_CFLAGS=`$PKG_CONFIG --cflags $found_ruby`
+RUBY_LIBS=`$PKG_CONFIG --libs $found_ruby`
+AC_SUBST(RUBY_BIN)
+AC_SUBST(RUBY_CFLAGS)
+AC_SUBST(RUBY_LIBS)
+
+test "$found_ruby" != "no" && found_ruby=yes
+AM_CONDITIONAL([ENABLE_RBFFI], [test "$found_ruby" = "yes"])
+
+
+dnl ================================================================
 dnl Python
 dnl ================================================================
 
@@ -541,6 +573,7 @@ loaders/lua5.1/Makefile
 loaders/lua5.1/resources/Makefile
 loaders/python/Makefile
 loaders/python3/Makefile
+loaders/rbffi/Makefile
 data/Makefile
 data/glade/Makefile
 data/icons/Makefile
@@ -551,6 +584,7 @@ peas-demo/plugins/Makefile
 peas-demo/plugins/helloworld/Makefile
 peas-demo/plugins/luahello/Makefile
 peas-demo/plugins/pythonhello/Makefile
+peas-demo/plugins/rbffihello/Makefile
 peas-demo/plugins/secondtime/Makefile
 po/Makefile.in
 tests/Makefile
@@ -560,6 +594,7 @@ tests/libpeas/plugins/embedded/Makefile
 tests/libpeas/plugins/extension-c/Makefile
 tests/libpeas/plugins/extension-lua/Makefile
 tests/libpeas/plugins/extension-python/Makefile
+tests/libpeas/plugins/extension-rbffi/Makefile
 tests/libpeas/introspection/Makefile
 tests/libpeas/testing/Makefile
 tests/libpeas-gtk/Makefile
@@ -594,4 +629,5 @@ Languages support:
         Lua 5.1 support               : ${found_lua51}
         Python 2 support              : ${found_python2}
         Python 3 support              : ${found_python3}
+        Ruby support                  : ${found_ruby}
 "

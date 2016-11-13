@@ -7,3 +7,7 @@ endif
 if ENABLE_PYTHON3
 SUBDIRS += pythonhello
 endif
+
+if ENABLE_RBFFI
+SUBDIRS += rbffihello
+endif
