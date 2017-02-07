@@ -3,6 +3,8 @@ loader_resources_c_deps = $(srcdir)/peas-lua.gresource.xml $(loader_resources_de
 
 LUAC_FILES = $(addsuffix c,$(loader_resources_deps))
 
+$(info $(loader_resources_c_deps))
+
 peas-lua-resources.c: $(loader_resources_c_deps)
 	$(AM_V_GEN) $(GLIB_COMPILE_RESOURCES)			\
 		--target="$@"					\
@@ -12,7 +14,7 @@ peas-lua-resources.c: $(loader_resources_c_deps)
 		"$(srcdir)/peas-lua.gresource.xml"
 
 %.luac: %.lua
-	$(AM_V_GEN) $(LUA51_BIN) $(srcdir)/peas-lua-compile.lua $< $@
+	$(AM_V_GEN) $(LUA_BIN) $(srcdir)/peas-lua-compile.lua $< $@
 
 all-local: $(LUAC_FILES) peas-lua-resources.c
 

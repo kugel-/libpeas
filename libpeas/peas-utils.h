@@ -24,8 +24,16 @@
 
 #include <glib-object.h>
 
-#define PEAS_UTILS_C_LOADER_ID  0
-#define PEAS_UTILS_N_LOADERS    4
+typedef enum {
+   PEAS_UTILS_C_LOADER_ID,
+   PEAS_UTILS_LUA51_LOADER_ID,
+   PEAS_UTILS_LUA52_LOADER_ID,
+   PEAS_UTILS_LUA53_LOADER_ID,
+   PEAS_UTILS_PYTHON_LOADER_ID,
+   PEAS_UTILS_PYTHON3_LOADER_ID,
+   PEAS_UTILS_N_LOADERS
+}
+PEAS_UTILS_LOADER_IDS;
 
 gboolean  peas_utils_valist_to_parameter_list (GType         exten_type,
                                                const gchar  *first_property,

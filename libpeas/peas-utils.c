@@ -30,19 +30,38 @@
 
 #include "peas-utils.h"
 
+
 static const gchar *all_plugin_loaders[] = {
-  "c", "lua5.1", "python", "python3"
+  "c",
+  "lua5.1",
+  "lua5.2",
+  "lua5.3",
+  "python",
+  "python3"
 };
 
 static const gchar *all_plugin_loader_modules[] = {
-  "cloader", "lua51loader", "pythonloader", "python3loader"
+  "cloader",
+  "lua51loader",
+  "lua52loader",
+  "lua53loader",
+  "pythonloader",
+  "python3loader"
 };
 
-static const gint conflicting_plugin_loaders[PEAS_UTILS_N_LOADERS][2] = {
-  { -1, -1 }, /* c       => {}          */
-  { -1, -1 }, /* lua5.1  => {}          */
-  {  3, -1 }, /* python  => { python3 } */
-  {  2, -1 }  /* python3 => { python  } */
+static const gint conflicting_plugin_loaders[][3] = {
+  /* c       => {} */
+  { -1, -1, -1 },
+  /* lua5.1  => { lua5.2, lua5.3 } */
+  { PEAS_UTILS_LUA52_LOADER_ID, PEAS_UTILS_LUA53_LOADER_ID, -1 },
+  /* lua5.2  => { lua5.1, lua5.3 } */
+  { PEAS_UTILS_LUA51_LOADER_ID, PEAS_UTILS_LUA53_LOADER_ID, -1 },
+  /* lua5.3  => { lua5.1, lua5.2 } */
+  { PEAS_UTILS_LUA51_LOADER_ID, PEAS_UTILS_LUA52_LOADER_ID, -1 },
+  /* python  => { python3 } */
+  { PEAS_UTILS_PYTHON3_LOADER_ID, -1, -1 },
+  /* python3 => { python  } */
+  { PEAS_UTILS_PYTHON_LOADER_ID, -1, -1 }
 };
 
 G_STATIC_ASSERT (G_N_ELEMENTS (all_plugin_loaders) == PEAS_UTILS_N_LOADERS);

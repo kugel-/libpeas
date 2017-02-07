@@ -1,6 +1,6 @@
 SUBDIRS =
 
-if ENABLE_LUA51
+if ENABLE_LUA
 SUBDIRS += lua5.1
 endif
 

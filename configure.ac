@@ -236,7 +236,7 @@ dnl ================================================================
 dnl Lua
 dnl ================================================================
 
-LUA51_REQUIRED=5.1.0
+LUA_MIN_REQUIRED=5.1.0
 LUAJIT_REQUIRED=2.0
 
 LGI_MAJOR_VERSION=0
@@ -276,87 +276,118 @@ int main(int argc, char **argv)
 
 AC_ARG_ENABLE(lua5.1,
               AS_HELP_STRING([--enable-lua5.1],[Enable Lua 5.1 support]),
-              [enable_lua51=$enableval],
-              [enable_lua51=auto])
+              [enable_lua=$enableval],
+              [enable_lua=auto])
 
 AC_ARG_ENABLE(luajit,
               AS_HELP_STRING([--enable-luajit],[Enable LuaJIT for Lua 5.1 support]),
               [enable_luajit=$enableval],
               [enable_luajit=auto])
 
-AC_MSG_CHECKING([for Lua 5.1 availability.])
+AC_DEFUN([CHECK_LGI],
+[
+    AC_MSG_CHECKING(for LGI availability in $1.)
 
-if test "x$enable_lua51" = "xno"; then
-    found_lua51="no (disabled, use --enable-lua5.1 to enable)"
-    AC_MSG_RESULT([$found_lua51])
+    peas_save_CFLAGS="$CFLAGS"
+    peas_save_LIBS="$LIBS"
+    lua_CFLAGS=`$PKG_CONFIG --cflags $1`
+    lua_LIBS=`$PKG_CONFIG --libs $1`
+    CFLAGS="$PEAS_CFLAGS $lua_CFLAGS -I${srcdir}/loaders/lua5.1"
+    LIBS="$PEAS_LIBS $lua_LIBS"
+    AC_TRY_RUN(peas_lgi_version_test(0),
+               found_lua=yes,
+               found_lua=no,
+               found_lua=yes)
+    CFLAGS="$peas_save_CFLAGS"
+    LIBS="$peas_save_LIBS"
+    if test "$found_lua" = "yes"; then
+        AC_MSG_RESULT([yes])
+        $3
+    else
+        AC_MSG_RESULT([no])
+        $4
+    fi
+])
+
+if test "x$enable_lua" = "xno"; then
+    found_lua="no (disabled, use --enable-lua5.1 to enable)"
+    AC_MSG_RESULT([$found_lua])
 else
     if test "x$enable_luajit" != "xno"; then
+        AC_MSG_CHECKING([for LuaJIT availability.])
         PKG_CHECK_EXISTS([luajit >= $LUAJIT_REQUIRED], [
-            found_lua51=yes
-            with_lua51=luajit
+            found_lua=yes
+            with_lua=luajit
+            AC_MSG_RESULT([yes ($with_lua)])
+            CHECK_LGI([luajit], [5.1], [found_lgi=yes])
+            lua_bin="lua5.1"
         ], [
-            found_lua51=no
+            AC_MSG_RESULT([no])
+            found_lua=no
         ])
 
-        if test "x$enable_luajit" = "xyes" -a "x$found_lua51" = "xno"; then
+        if test "x$enable_luajit" = "xyes" -a "x$found_lua" != "xyes"; then
             AC_MSG_ERROR([You need to have LuaJIT >= $LUAJIT_REQUIRED
                           installed to build libpeas])
         fi
     fi
 
-    if test "x$found_lua51" != "xyes"; then
-        PKG_CHECK_EXISTS([lua5.1 >= $LUA51_REQUIRED], [
-            found_lua51=yes
-            with_lua51=lua5.1
-        ], [
-            found_lua51=no
-        ])
-
-        if test "x$enable_lua51" = "xyes" -a "x$found_lua51" = "xno"; then
-            AC_MSG_ERROR([You need to have Lua 5.1 >= $LUA51_REQUIRED
-                          installed to build libpeas])
-        fi
+    if test "x$found_lua" != "xyes"; then
+        with_lua=
+        found_lua=no
+        for luav in 5.1 5.2 5.3; do
+            lua_pkg=$(echo $luav | tr -d '.')
+            AC_MSG_CHECKING([for Lua $luav availability.])
+            PKG_CHECK_EXISTS([lua$lua_pkg >= $luav], [
+                found_lua=yes
+                AC_MSG_RESULT([$found_lua])
+                CHECK_LGI([lua$lua_pkg], [$luav], [
+                    found_lgi=yes
+                    with_lua="$with_lua lua$luav"
+                    # use latest lua for syntax checking scripts
+                    lua_bin="lua$luav"
+                ])
+            ], [
+                AC_MSG_RESULT([no])
+            ])
+        done
     fi
 
-    if test "x$found_lua51" != "xyes"; then
-        AC_MSG_RESULT([$found_lua51])
-    else
-        AC_MSG_RESULT([$found_lua51 ($with_lua51)])
+    if test "x$enable_lua" = "xyes" -a "x$found_lua" != "xyes"; then
+        AC_MSG_ERROR([You need to have Lua 5.x >= $LUA_MIN_REQUIRED
+                      installed to build libpeas])
+    fi
 
-        LUA51_BIN="$with_lua51"
-        LUA51_CFLAGS=`$PKG_CONFIG --cflags $with_lua51`
-        LUA51_LIBS=`$PKG_CONFIG --libs $with_lua51`
-        AC_SUBST(LUA51_BIN)
-        AC_SUBST(LUA51_CFLAGS)
-        AC_SUBST(LUA51_LIBS)
-
-        AC_MSG_CHECKING(for LGI availability in Lua 5.1.)
-
-        peas_save_CFLAGS="$CFLAGS"
-        peas_save_LIBS="$LIBS"
-        CFLAGS="$PEAS_CFLAGS $LUA51_CFLAGS -I${srcdir}/loaders/lua5.1"
-        LIBS="$PEAS_LIBS $LUA51_LIBS"
-        AC_TRY_RUN(peas_lgi_version_test(0),
-                   found_lua51=yes,
-                   found_lua51=no,
-                   found_lua51=yes)
-        CFLAGS="$peas_save_CFLAGS"
-        LIBS="$peas_save_LIBS"
-
-        if test "x$enable_lua51" = "xyes" -a "x$found_lua51" = "xno"; then
+    if test "x$found_lua" = "xyes"; then
+        if test "x$found_lgi" != "xyes"; then
             AC_MSG_ERROR([You need to have LGI >= $LGI_REQUIRED
                           installed to build libpeas])
         fi
-
-        if test "x$found_lua51" = "xyes"; then
-            AC_DEFINE(ENABLE_LUA51, 1, [Define to compile with Lua support])
+        found_lua="yes ($with_lua)"
+        AC_SUBST([LUA_BIN], [$lua_bin])
+        if echo $with_lua | grep -q "luajit" ; then
+            AC_SUBST([LUA51_CFLAGS], [$($PKG_CONFIG --cflags luajit)])
+            AC_SUBST([LUA51_LIBS],   [$($PKG_CONFIG --libs luajit)])
+        elif echo $with_lua | grep -q "5.1" ; then
+            AC_SUBST([LUA51_CFLAGS], [$($PKG_CONFIG --cflags lua51)])
+            AC_SUBST([LUA51_LIBS],   [$($PKG_CONFIG --libs lua51)])
         fi
-
-        AC_MSG_RESULT([$found_lua51])
+        if echo $with_lua | grep -q "5.2" ; then
+            AC_SUBST([LUA52_CFLAGS], [$($PKG_CONFIG --cflags lua52)])
+            AC_SUBST([LUA52_LIBS],   [$($PKG_CONFIG --libs lua52)])
+        fi
+        if echo $with_lua | grep -q "5.3" ; then
+            AC_SUBST([LUA53_CFLAGS], [$($PKG_CONFIG --cflags lua53)])
+            AC_SUBST([LUA53_LIBS],   [$($PKG_CONFIG --libs lua53)])
+        fi
     fi
 fi
 
-AM_CONDITIONAL([ENABLE_LUA51], [test "x$found_lua51" = "xyes"])
+# test for _LIBS, _CFLAGS can be empty
+AM_CONDITIONAL([ENABLE_LUA51], [test -n "$LUA51_LIBS"])
+AM_CONDITIONAL([ENABLE_LUA52], [test -n "$LUA52_LIBS"])
+AM_CONDITIONAL([ENABLE_LUA53], [test -n "$LUA53_LIBS"])
+AM_CONDITIONAL([ENABLE_LUA],   [test -n "$LUA51_LIBS$LUA52_LIBS$LUA53_LIBS"])
 
 dnl ================================================================
 dnl Python
@@ -591,7 +622,7 @@ Configuration:
 
 Languages support:
 
-        Lua 5.1 support               : ${found_lua51}
+        Lua 5.x support               : ${found_lua}
         Python 2 support              : ${found_python2}
         Python 3 support              : ${found_python3}
 "
