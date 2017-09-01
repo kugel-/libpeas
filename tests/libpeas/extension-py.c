@@ -225,13 +225,10 @@ main (int   argc,
 {
   testing_init (&argc, &argv);
 
-  /* Only test the basics */
-  testing_extension_basic (PY_LOADER_STR);
-
-  /* We still need to add the callable tests
+  /* Only test the basics, plus the callable tests
    * because of peas_extension_call()
    */
-  testing_extension_callable (PY_LOADER_STR);
+  testing_extension_all (PY_LOADER_STR);
 
 #undef EXTENSION_TEST
 #undef EXTENSION_TEST_FUNC

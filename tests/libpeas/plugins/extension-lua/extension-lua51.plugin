@@ -1,6 +1,6 @@
 [Plugin]
 Module=extension-lua51
-Loader=lua5.1
+Loader=lua5.1;lua5.2;lua5.3
 Name=Extension lua5.1
 Description=This plugin is for the lua5.1 PeasExtension tests.
 Authors=Garrett Regier

@@ -540,23 +540,12 @@ test_extension_call_abstract (PeasEngine     *engine,
   } G_STMT_END
 
 void
-testing_extension_basic (const gchar *loader_)
+testing_extension_basic (const gchar *loader_, const gchar *extension)
 {
-  gint i, j;
-  gchar *loader_name;
   PeasEngine *engine;
 
   loader = g_strdup (loader_);
-
-  loader_name = g_new0 (gchar, strlen (loader) + 1);
-  for (i = 0, j = 0; loader[i] != '\0'; ++i)
-    {
-      if (loader[i] != '.')
-        loader_name[j++] = loader[i];
-    }
-
-  extension_plugin = g_strdup_printf ("extension-%s", loader_name);
-  g_free (loader_name);
+  extension_plugin = g_strdup (extension);
 
   engine = testing_engine_new ();
   peas_engine_enable_loader (engine, loader);

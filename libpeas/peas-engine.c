@@ -1085,6 +1085,58 @@ peas_engine_get_plugin_info (PeasEngine  *engine,
   return NULL;
 }
 
+
+static PeasPluginLoader *
+get_wanted_loader (PeasEngine     *engine,
+                   PeasPluginInfo *info)
+{
+  PeasEnginePrivate *priv = GET_PRIV (engine);
+  gchar *loader;
+  gchar **loader_list = info->loaders;
+
+  if (g_strv_length (info->loaders) == 1)
+    loader = info->loaders[0];
+  else
+    {
+    /* Determine responsible loader. Currently, simply do a first-fit
+     * in the order given by the plugin info.
+     */
+      for (loader = *loader_list++; loader; loader = *loader_list++)
+        {
+          gint loader_id = peas_utils_get_loader_id (loader);
+          LoaderInfo *loader_info = &priv->loaders[loader_id];
+          GlobalLoaderInfo *global_loader_info = &loaders[loader_id];
+          PeasPluginLoader *ploader = NULL;
+
+          /* get_local_plugin_loader() would attempt to load any loader, but
+           * we really only want those that have been enabled previously, since
+           * it's likely that only one of lua 5.1, 5.2 or 5.3 is actually usable.
+           * Thus, if using alternate loaders, the matching ones have to be
+           * enabled explicitely (implicit enabling is deprecated anyway).
+           */
+          g_mutex_lock (&loaders_lock);
+          if (loader_info->enabled || global_loader_info->enabled)
+            ploader = get_local_plugin_loader (engine, loader_id);
+          g_mutex_unlock (&loaders_lock);
+
+          if (ploader)
+            {
+              g_object_unref (ploader);
+              break;
+            }
+        }
+    }
+
+  if (loader)
+    {
+      gint loader_id = peas_utils_get_loader_id (loader);
+      return get_plugin_loader (engine, loader_id);
+    }
+
+  return NULL;
+}
+
+
 static void
 peas_engine_load_plugin_real (PeasEngine     *engine,
                               PeasPluginInfo *info)
@@ -1131,16 +1183,18 @@ peas_engine_load_plugin_real (PeasEngine     *engine,
         }
     }
 
-  loader = get_plugin_loader (engine, info->loader_id);
+  loader = get_wanted_loader (engine, info);
 
   if (loader == NULL)
     {
       /* Already warned */
-      g_set_error (&info->error,
-                   PEAS_PLUGIN_INFO_ERROR,
-                   PEAS_PLUGIN_INFO_ERROR_LOADER_NOT_FOUND,
-                   _("Plugin loader '%s' was not found"),
-                   peas_utils_get_loader_from_id (info->loader_id));
+      char *str_loaders = g_strjoinv (", ", info->loaders);
+      g_set_error(&info->error,
+                  PEAS_PLUGIN_INFO_ERROR,
+                  PEAS_PLUGIN_INFO_ERROR_LOADER_NOT_FOUND,
+                  _("None of the plugin's loaders (%s) was enabled"),
+                  str_loaders);
+      g_free (str_loaders);
       goto error;
     }
 
@@ -1227,7 +1281,7 @@ peas_engine_unload_plugin_real (PeasEngine     *engine,
     }
 
   /* find the loader and tell it to gc and unload the plugin */
-  loader = get_plugin_loader (engine, info->loader_id);
+  loader = get_wanted_loader (engine, info);
 
   peas_plugin_loader_garbage_collect (loader);
   peas_plugin_loader_unload (loader, info);
@@ -1297,7 +1351,7 @@ peas_engine_provides_extension (PeasEngine     *engine,
   if (!peas_plugin_info_is_loaded (info))
     return FALSE;
 
-  loader = get_plugin_loader (engine, info->loader_id);
+  loader = get_wanted_loader (engine, info);
   return peas_plugin_loader_provides_extension (loader, info, extension_type);
 }
 
@@ -1338,7 +1392,7 @@ peas_engine_create_extensionv (PeasEngine     *engine,
                         G_TYPE_IS_ABSTRACT (extension_type), NULL);
   g_return_val_if_fail (peas_plugin_info_is_loaded (info), NULL);
 
-  loader = get_plugin_loader (engine, info->loader_id);
+  loader = get_wanted_loader (engine, info);
   extension = peas_plugin_loader_create_extension (loader, info, extension_type,
                                                    n_parameters, parameters);
 

@@ -34,6 +34,20 @@ extension_lua51_CFLAGS    = $(LUA51_CFLAGS)
 extension_lua51_LDADD     = $(LDADD) $(LUA51_LIBS)
 endif
 
+if ENABLE_LUA52
+TEST_PROGS               += extension-lua52
+extension_lua52_SOURCES   = extension-lua.c
+extension_lua52_CFLAGS    = $(LUA52_CFLAGS)
+extension_lua52_LDADD     = $(LDADD) $(LUA52_LIBS)
+endif
+
+if ENABLE_LUA53
+TEST_PROGS               += extension-lua53
+extension_lua53_SOURCES   = extension-lua.c
+extension_lua53_CFLAGS    = $(LUA53_CFLAGS)
+extension_lua53_LDADD     = $(LDADD) $(LUA53_LIBS)
+endif
+
 if ENABLE_PYTHON2
 TEST_PROGS               += extension-python
 extension_python_SOURCES  = extension-py.c

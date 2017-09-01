@@ -85,6 +85,7 @@ _peas_plugin_info_unref (PeasPluginInfo *info)
   g_free (info->filename);
   g_free (info->module_dir);
   g_free (info->data_dir);
+  g_strfreev (info->loaders);
   g_free (info->embedded);
   g_free (info->module_name);
   g_strfreev (info->dependencies);
@@ -126,12 +127,13 @@ _peas_plugin_info_new (const gchar *filename,
 {
   gsize i;
   gboolean is_resource;
-  gchar *loader = NULL;
+  gchar **loaders = NULL;
   gchar **strv, **keys;
   PeasPluginInfo *info;
   GKeyFile *plugin_file;
   GBytes *bytes = NULL;
   GError *error = NULL;
+  gboolean only_c;
 
   g_return_val_if_fail (filename != NULL, NULL);
 
@@ -188,22 +190,33 @@ _peas_plugin_info_new (const gchar *filename,
       goto error;
     }
 
-  /* Get the loader for this plugin */
-  loader = g_key_file_get_string (plugin_file, "Plugin", "Loader", NULL);
-  if (loader == NULL || *loader == '\0')
+  /* Get the loader(s) for this plugin */
+  loaders = g_key_file_get_string_list (plugin_file, "Plugin", "Loader", NULL, NULL);
+  if (loaders == NULL || (g_strv_length(loaders) == 1 && *loaders[0] == '\0'))
+    only_c = TRUE;
+  else
+    only_c = FALSE;
+  if (only_c)
     {
       /* Default to the C loader */
-      info->loader_id = PEAS_UTILS_C_LOADER_ID;
+      info->loaders = g_new0(char *, 2);
+      info->loaders[0] = g_strdup("c");
+      g_strfreev(loaders);
     }
   else
     {
-      info->loader_id = peas_utils_get_loader_id (loader);
-
-      if (info->loader_id == -1)
+      gchar *loader;
+      info->loaders = loaders;
+      /* Verify that all loaders exist early. Whether they are loader
+       * and usable is checked at extension load time. */
+      for (loader = *loaders++; loader; loader = *loaders++)
         {
-          g_warning ("Unkown 'Loader' in '[Plugin]' section in '%s': %s",
-                     filename, loader);
-          goto error;
+          if (peas_utils_get_loader_id (loader) == -1)
+            {
+              g_warning ("Unkown 'Loader' in '[Plugin]' section in '%s': %s",
+                         filename, loader);
+              goto error;
+            }
         }
     }
 
@@ -212,7 +225,7 @@ _peas_plugin_info_new (const gchar *filename,
                                           "Embedded", NULL);
   if (info->embedded != NULL)
     {
-      if (info->loader_id != PEAS_UTILS_C_LOADER_ID)
+      if (!only_c)
         {
           g_warning ("Bad plugin file '%s': embedded plugins "
                      "must use the C plugin loader", filename);
@@ -307,7 +320,6 @@ _peas_plugin_info_new (const gchar *filename,
 
   g_strfreev (keys);
 
-  g_free (loader);
   g_bytes_unref (bytes);
   g_key_file_free (plugin_file);
 
@@ -325,7 +337,7 @@ _peas_plugin_info_new (const gchar *filename,
 error:
 
   g_free (info->embedded);
-  g_free (loader);
+  g_strfreev (info->loaders);
   g_free (info->module_name);
   g_free (info->name);
   g_free (info);
