@@ -190,8 +190,27 @@ _peas_plugin_info_new (const gchar *filename,
       goto error;
     }
 
-  /* Get the loader(s) for this plugin */
+  /* Get the loader(s) for this plugin.
+   * 'Loaders' is now a synonym for 'Loader' since we support specifying
+   * multiple loaders, so it's more natural to use. But Loader can still be
+   * used interchangeably. However, a .plugin file may have only one of them
+   * at a time to avoid ambiguity.
+   */
   loaders = g_key_file_get_string_list (plugin_file, "Plugin", "Loader", NULL, NULL);
+  if (g_key_file_has_key(plugin_file, "Plugin", "Loaders", NULL))
+    {
+      if (loaders != NULL)
+        {
+          g_warning ("'Loader' and 'Loaders' cannot be used simultaneously in in '[Plugin]' section in '%s'\n"
+                     "Use either one as they are equivalent.\n"
+                     filename);
+          goto error;
+        }
+      else
+        {
+          loaders = g_key_file_get_string_list (plugin_file, "Plugin", "Loaders", NULL, NULL);
+        }
+    }
   if (loaders == NULL || (g_strv_length(loaders) == 1 && *loaders[0] == '\0'))
     only_c = TRUE;
   else
